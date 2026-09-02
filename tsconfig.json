@@ -1,0 +1,12 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/shared" },
+    { "path": "packages/scene-core" },
+    { "path": "packages/camera-dsl" },
+    { "path": "packages/camera-solver" },
+    { "path": "packages/project-core" },
+    { "path": "packages/renderer-three" },
+    { "path": "apps/web" }
+  ]
+}

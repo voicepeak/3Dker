@@ -1,0 +1,165 @@
+:root {
+  color-scheme: dark;
+  --bg: #121417;
+  --panel: #1b1f24;
+  --panel-2: #23282f;
+  --line: #323943;
+  --text: #e8edf2;
+  --muted: #9aa6b2;
+  --accent: #4cc9f0;
+  --warn: #ff4d6d;
+  --ok: #7dce82;
+  font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; height: 100%; background: var(--bg); color: var(--text); }
+
+button, select, input {
+  font: inherit;
+  color: inherit;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+
+button { cursor: pointer; }
+button.primary { background: #1e4e5f; border-color: #2e7d93; }
+button.danger { background: #4a1f28; border-color: #7a3140; }
+button.active { outline: 1px solid var(--accent); }
+
+.app {
+  height: 100%;
+  display: grid;
+  grid-template-rows: 48px 1fr 148px 200px 42px;
+  grid-template-columns: 220px 1fr 280px;
+}
+
+.toolbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+.toolbar h1 { font-size: 14px; margin: 0 12px 0 0; font-weight: 600; letter-spacing: 0.04em; }
+.toolbar .spacer { flex: 1; }
+.toolbar .status { font-size: 12px; color: var(--muted); }
+
+.scene-panel, .inspector, .intent-panel, .prompt-panel, .playback {
+  background: var(--panel);
+  border-color: var(--line);
+}
+
+.scene-panel { border-right: 1px solid var(--line); overflow: auto; }
+.inspector { border-left: 1px solid var(--line); overflow: auto; }
+.prompt-panel,
+.intent-panel {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--line);
+  overflow: auto;
+}
+
+.prompt-panel textarea {
+  width: calc(100% - 24px);
+  margin: 0 12px;
+  min-height: 64px;
+  resize: vertical;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: inherit;
+  padding: 8px;
+  font: inherit;
+}
+
+.prompt-log {
+  padding: 0 12px 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.playback {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 12px;
+  border-top: 1px solid var(--line);
+}
+
+.panel-title {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 10px 12px 6px;
+}
+
+.entity-list { list-style: none; margin: 0; padding: 0 8px 12px; }
+.entity-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.entity-list li.selected { background: #2a333c; }
+.entity-list .type { font-size: 11px; color: var(--muted); }
+
+.add-row { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 12px; }
+.add-row button { font-size: 12px; padding: 4px 8px; }
+
+.field { display: grid; grid-template-columns: 92px 1fr; gap: 8px; align-items: center; padding: 4px 12px; }
+.field label { font-size: 12px; color: var(--muted); }
+.field.row { grid-template-columns: 92px repeat(3, 1fr); }
+.intent-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px 0; padding-bottom: 8px; }
+.warnings { padding: 8px 12px; font-size: 12px; color: var(--warn); }
+.warnings.empty { color: var(--ok); }
+
+.viewport { position: relative; min-height: 0; background: #0d0f12; }
+.viewport canvas { display: block; width: 100%; height: 100%; }
+.viewport .hint {
+  position: absolute;
+  left: 12px;
+  bottom: 10px;
+  font-size: 11px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.playback input[type="range"] { flex: 1; }
+.time { font-variant-numeric: tabular-nums; font-size: 12px; color: var(--muted); width: 128px; }
+
+.camera-preview {
+  position: fixed;
+  right: 24px;
+  top: 64px;
+  width: 420px;
+  height: 280px;
+  z-index: 20;
+  display: grid;
+  grid-template-rows: 32px 1fr;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+.camera-preview-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  font-size: 12px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+
+.camera-preview-view { min-height: 0; }
+.camera-preview-view canvas { display: block; width: 100%; height: 100%; }

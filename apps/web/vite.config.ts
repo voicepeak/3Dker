@@ -1,0 +1,26 @@
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "node:path";
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      "@semantic-director/shared": path.resolve(__dirname, "../../packages/shared/src/index.ts"),
+      "@semantic-director/scene-core": path.resolve(__dirname, "../../packages/scene-core/src/index.ts"),
+      "@semantic-director/camera-dsl": path.resolve(__dirname, "../../packages/camera-dsl/src/index.ts"),
+      "@semantic-director/camera-solver": path.resolve(
+        __dirname,
+        "../../packages/camera-solver/src/index.ts",
+      ),
+      "@semantic-director/project-core": path.resolve(__dirname, "../../packages/project-core/src/index.ts"),
+      "@semantic-director/renderer-three": path.resolve(
+        __dirname,
+        "../../packages/renderer-three/src/index.ts",
+      ),
+    },
+  },
+  server: {
+    port: 5173,
+  },
+});

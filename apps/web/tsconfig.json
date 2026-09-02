@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "jsx": "react-jsx",
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "types": ["vite/client"]
+  },
+  "include": ["src"],
+  "references": [
+    { "path": "../../packages/shared" },
+    { "path": "../../packages/scene-core" },
+    { "path": "../../packages/camera-dsl" },
+    { "path": "../../packages/camera-solver" },
+    { "path": "../../packages/project-core" },
+    { "path": "../../packages/renderer-three" }
+  ]
+}

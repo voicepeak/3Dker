@@ -1,0 +1,17 @@
+{
+  "name": "@semantic-director/project-core",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@semantic-director/camera-dsl": "*",
+    "@semantic-director/camera-solver": "*",
+    "@semantic-director/scene-core": "*",
+    "@semantic-director/shared": "*",
+    "zod": "^3.24.2"
+  }
+}
