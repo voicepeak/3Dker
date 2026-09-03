@@ -102,7 +102,7 @@ let playbackClockTime = 0;
 
 export function peekPlaybackTime(): number {
   const playback = useProjectStore.getState().playback;
-  return playback.playing ? playbackClockTime || playback.currentTime : playback.currentTime;
+  return playback.playing ? playbackClockTime : playback.currentTime;
 }
 
 export const useProjectStore = create<ProjectStore>((set, get) => ({
@@ -211,15 +211,12 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     const playback = get().playback;
     if (!playback.playing) return;
     const duration = Math.max(playback.duration, 0.001);
-    let next = playback.currentTime + dt;
+    let next = (playbackClockTime || playback.currentTime) + dt;
     if (next >= duration) next = 0;
-    const now = performance.now();
-    if (now - lastPlaybackUi < 33) {
-      playbackClockTime = next;
-      return;
-    }
-    lastPlaybackUi = now;
     playbackClockTime = next;
+    const now = performance.now();
+    if (now - lastPlaybackUi < 33) return;
+    lastPlaybackUi = now;
     set({ playback: { duration: playback.duration, playing: true, currentTime: next } });
   },
   loadDemo: (which) => {

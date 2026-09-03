@@ -31,9 +31,11 @@ export function Viewport() {
     const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 200);
     camera.position.set(6, 4, 8);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     host.appendChild(renderer.domElement);
+    const onContextLost = (event: Event) => event.preventDefault();
+    renderer.domElement.addEventListener("webglcontextlost", onContextLost);
 
     const hemi = new THREE.HemisphereLight(0xc9d6e3, 0x2a241c, 1.1);
     scene.add(hemi);
@@ -47,7 +49,7 @@ export function Viewport() {
     const overlay = new THREE.Group();
     scene.add(entityGroup, overlay);
 
-    const filmCamera = new THREE.PerspectiveCamera(35, 16 / 9, 0.05, 12);
+    const filmCamera = new THREE.PerspectiveCamera(35, 16 / 9, 0.05, 80);
     const helper = new THREE.CameraHelper(filmCamera);
     overlay.add(filmCamera, helper);
 
@@ -320,6 +322,7 @@ export function Viewport() {
       ro.disconnect();
       window.removeEventListener("keydown", onKey);
       renderer.domElement.removeEventListener("pointerdown", onClick);
+      renderer.domElement.removeEventListener("webglcontextlost", onContextLost);
       transform.dispose();
       orbit.dispose();
       renderer.dispose();

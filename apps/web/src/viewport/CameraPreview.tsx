@@ -25,9 +25,11 @@ export function CameraPreview() {
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x101318);
     const camera = new THREE.PerspectiveCamera(35, 16 / 9, 0.05, 80);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "low-power" });
+    renderer.setPixelRatio(1);
     host.appendChild(renderer.domElement);
+    const onContextLost = (event: Event) => event.preventDefault();
+    renderer.domElement.addEventListener("webglcontextlost", onContextLost);
     scene.add(new THREE.HemisphereLight(0xc9d6e3, 0x2a241c, 1.1));
     const dir = new THREE.DirectionalLight(0xffffff, 0.65);
     dir.position.set(4, 8, 3);
@@ -53,6 +55,7 @@ export function CameraPreview() {
     let raf = 0;
     const loop = () => {
       const state = useProjectStore.getState();
+      const time = peekPlaybackTime();
       const rev = state.scene.entities.map((e) => `${e.id}:${e.semanticType}:${e.bounds.size.join(",")}`).join("|");
       if (rev !== lastRev) {
         lastRev = rev;
@@ -73,13 +76,13 @@ export function CameraPreview() {
       for (const entity of state.scene.entities) {
         const root = meshes.get(entity.id);
         if (!root) continue;
-        const evaluated = evaluateEntity(entity, peekPlaybackTime());
+        const evaluated = evaluateEntity(entity, time);
         root.position.set(evaluated.position[0], 0, evaluated.position[2]);
         root.rotation.set(0, evaluated.yaw, 0);
-        root.scale.set(evaluated.scale[0], evaluated.scale[1], evaluated.scale[2]);
+        root.scale.set(...evaluated.scale);
       }
       if (state.solve) {
-        const sample = sampleAt(state.solve, peekPlaybackTime());
+        const sample = sampleAt(state.solve, time);
         camera.position.set(...sample.position);
         camera.quaternion.set(...sample.quaternion);
         camera.fov = THREE.MathUtils.radToDeg(verticalFovRad(sample.focalLength));
@@ -93,6 +96,7 @@ export function CameraPreview() {
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
+      renderer.domElement.removeEventListener("webglcontextlost", onContextLost);
       renderer.dispose();
       host.removeChild(renderer.domElement);
     };

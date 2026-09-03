@@ -4,6 +4,14 @@ import path from "node:path";
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, "index.html"),
+        preview: path.resolve(__dirname, "preview.html"),
+      },
+    },
+  },
   resolve: {
     alias: {
       "@semantic-director/shared": path.resolve(__dirname, "../../packages/shared/src/index.ts"),
@@ -21,6 +29,8 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
+    port: 5174,
+    strictPort: true,
+    host: "127.0.0.1",
   },
 });

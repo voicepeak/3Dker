@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev -w @semantic-director/web",
+    "dev": "npm run dev -w @semantic-director/web -- --port 5174 --strictPort --host 127.0.0.1",
     "build": "npm run build -w @semantic-director/web",
     "test": "vitest run",
     "test:watch": "vitest",
