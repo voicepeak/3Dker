@@ -1,5 +1,7 @@
 # Semantic 3D Director
 
+[![CI](https://github.com/voicepeak/3Dker/actions/workflows/ci.yml/badge.svg)](https://github.com/voicepeak/3Dker/actions/workflows/ci.yml)
+
 面向 AIGC 视频生成前置环节的 3D 白膜导演工具。用户不手 K 摄像机关键帧，只通过 **Semantic Camera Intent** 生成可播放、可修改、可导出的白膜摄像机动画。
 
 ```text
