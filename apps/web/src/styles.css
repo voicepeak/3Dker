@@ -32,7 +32,7 @@ button.active, a.toolbar-link.active { outline: 1px solid var(--accent); }
 .app {
   height: 100%;
   display: grid;
-  grid-template-rows: 48px 1fr 148px 200px 42px;
+  grid-template-rows: 48px 1fr 220px 200px 42px;
   grid-template-columns: 220px 1fr 280px;
 }
 
@@ -67,7 +67,7 @@ button.active, a.toolbar-link.active { outline: 1px solid var(--accent); }
 .prompt-panel textarea {
   width: calc(100% - 24px);
   margin: 0 12px;
-  min-height: 64px;
+  min-height: 56px;
   resize: vertical;
   background: var(--panel-2);
   border: 1px solid var(--line);
@@ -77,11 +77,22 @@ button.active, a.toolbar-link.active { outline: 1px solid var(--accent); }
   font: inherit;
 }
 
+.llm-grid { display: grid; grid-template-columns: 2fr 1fr auto; }
+.llm-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .prompt-log {
   padding: 0 12px 8px;
   font-size: 12px;
   color: var(--muted);
 }
+.prompt-log.error { color: var(--warn); }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.crash {
+  padding: 48px;
+  max-width: 560px;
+}
+.crash h1 { font-size: 20px; }
+.crash p { color: var(--warn); }
 .playback {
   grid-column: 1 / -1;
   display: flex;

@@ -123,9 +123,9 @@ export function Viewport() {
         return;
       }
       lastSceneRev = rev;
+      transform.detach();
       entityGroup.clear();
       meshes.clear();
-      transform.detach();
       for (const entity of state.scene.entities) {
         const geo = entityGeometry(entity.semanticType, entity.bounds.size);
         const mat = new THREE.MeshStandardMaterial({

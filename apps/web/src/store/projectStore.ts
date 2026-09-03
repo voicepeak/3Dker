@@ -3,14 +3,21 @@ import type { CameraIntent, FramingType, MotionIntent } from "@semantic-director
 import { cameraIntentSchema } from "@semantic-director/camera-dsl";
 import { sampleAt, solveCamera, type SolveResult } from "@semantic-director/camera-solver";
 import {
+  applyCameraPlan,
   applyDirectorPrompt,
+  applyScenePlan,
+  CAMERA_SYSTEM,
+  completeJson,
+  defaultLlmSettings,
   demoA,
   demoB,
   demoC,
   deserializeProject,
   emptyProject,
   exportCameraJson,
+  SCENE_SYSTEM,
   serializeProject,
+  type LlmSettings,
   type ProjectState,
 } from "@semantic-director/project-core";
 import {
@@ -33,6 +40,9 @@ interface ProjectStore extends ProjectState {
   solveError?: string;
   promptLog: string[];
   previewOpen: boolean;
+  llm: LlmSettings;
+  llmBusy: "idle" | "scene" | "camera";
+  llmError?: string;
   select: (id?: string) => void;
   addEntity: (type: SemanticType) => void;
   removeSelected: () => void;
@@ -57,6 +67,9 @@ interface ProjectStore extends ProjectState {
   exportCamera: () => void;
   applyPrompt: (text: string) => void;
   togglePreview: (open?: boolean) => void;
+  setLlm: (patch: Partial<LlmSettings>) => void;
+  generateScene: (text: string) => Promise<void>;
+  generateCamera: (text: string) => Promise<void>;
 }
 
 function withSolve(state: ProjectState): Pick<ProjectStore, "solve" | "solveError" | "playback"> {
@@ -98,6 +111,31 @@ function fromProject(project: ProjectState) {
   };
 }
 
+function sceneCatalog() {
+  return useProjectStore.getState().scene.entities.map((entity) => ({
+    id: entity.id,
+    name: entity.name,
+    type: entity.semanticType,
+    anchors: Object.keys(entity.anchors),
+    position: entity.transform.position,
+  }));
+}
+
+const LLM_STORAGE_KEY = "semantic-director-llm";
+
+function loadLlmSettings(): LlmSettings {
+  try {
+    const raw = localStorage.getItem(LLM_STORAGE_KEY);
+    return raw ? { ...defaultLlmSettings(), ...JSON.parse(raw) } : defaultLlmSettings();
+  } catch {
+    return defaultLlmSettings();
+  }
+}
+
+function saveLlmSettings(settings: LlmSettings) {
+  localStorage.setItem(LLM_STORAGE_KEY, JSON.stringify(settings));
+}
+
 let lastPlaybackUi = 0;
 let playbackClockTime = 0;
 let resolveTimer: number | undefined;
@@ -110,6 +148,8 @@ export function peekPlaybackTime(): number {
 export const useProjectStore = create<ProjectStore>((set, get) => ({
   ...fromProject(demoA()),
   previewOpen: false,
+  llm: loadLlmSettings(),
+  llmBusy: "idle",
   select: (id) => set({ selectedId: id }),
   addEntity: (type) => {
     const entity = createEntity(type, { position: [1.4 * Math.random(), 0, 1.2 * Math.random()] });
@@ -291,17 +331,106 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     a.click();
     URL.revokeObjectURL(url);
   },
+  setLlm: (patch) => {
+    const llm = { ...get().llm, ...patch };
+    saveLlmSettings(llm);
+    set({ llm });
+  },
+  generateScene: async (text) => {
+    const prompt = text.trim();
+    if (!prompt) return;
+    set({ llmBusy: "scene", llmError: undefined });
+    try {
+      const raw = await completeJson(get().llm, SCENE_SYSTEM, prompt);
+      const result = applyScenePlan(raw, get().scene.entities);
+      const first = result.entities[0];
+      const current = get().cameraIntents.find((i) => i.id === get().activeIntentId) ?? get().cameraIntents[0];
+      const stillThere = result.entities.find((entity) => entity.id === current.target.entityId);
+      const targetEntity = stillThere ?? first;
+      const cameraIntents = get().cameraIntents.map((item) => {
+        if (item.id !== current.id || !targetEntity) return item;
+        const heightRef = item.height;
+        const heightOk =
+          heightRef?.type === "anchor" && result.entities.some((entity) => entity.id === heightRef.entityId);
+        return {
+          ...item,
+          target: {
+            entityId: targetEntity.id,
+            anchor: targetEntity.anchors[item.target.anchor] ? item.target.anchor : defaultAnchor(targetEntity),
+          },
+          height: heightOk ? heightRef : undefined,
+        };
+      });
+      set({
+        scene: { entities: result.entities },
+        cameraIntents,
+        selectedId: first.id,
+        promptLog: ["场景调度", ...result.logs],
+        llmError: undefined,
+      });
+      get().resolve();
+    } catch (error) {
+      set({ llmError: error instanceof Error ? error.message : String(error) });
+    } finally {
+      set({ llmBusy: "idle" });
+    }
+  },
+  generateCamera: async (text) => {
+    const prompt = text.trim();
+    if (!prompt) return;
+    const entities = get().scene.entities;
+    if (!entities.length) {
+      set({ llmError: "请先生成或布置场景" });
+      return;
+    }
+    set({ llmBusy: "camera", llmError: undefined });
+    try {
+      const intent = get().cameraIntents.find((i) => i.id === get().activeIntentId) ?? get().cameraIntents[0];
+      const user = `当前场景清单：\n${JSON.stringify(sceneCatalog(), null, 2)}\n\n运镜描述：\n${prompt}`;
+      const raw = await completeJson(get().llm, CAMERA_SYSTEM, user);
+      const result = applyCameraPlan(raw, entities, intent);
+      set({
+        cameraIntents: get().cameraIntents.map((item) => (item.id === intent.id ? result.intent : item)),
+        promptLog: ["摄像机意图", ...result.logs],
+      });
+      get().resolve();
+    } catch (error) {
+      set({ llmError: error instanceof Error ? error.message : String(error) });
+    } finally {
+      set({ llmBusy: "idle" });
+    }
+  },
   applyPrompt: (text) => {
     const s = get();
     const intent = s.cameraIntents.find((i) => i.id === s.activeIntentId) ?? s.cameraIntents[0];
-    const result = applyDirectorPrompt(text, { entities: s.scene.entities, intent });
-    set({
-      scene: { entities: result.entities },
-      cameraIntents: s.cameraIntents.map((item) => (item.id === intent.id ? result.intent : item)),
-      selectedId: result.entities[0]?.id ?? s.selectedId,
-      promptLog: result.logs,
-    });
-    get().resolve();
+    try {
+      const result = applyDirectorPrompt(text, { entities: s.scene.entities, intent });
+      const first = result.entities[0];
+      const stillThere = result.entities.find((entity) => entity.id === result.intent.target.entityId);
+      const targetEntity = stillThere ?? first;
+      set({
+        scene: { entities: result.entities },
+        cameraIntents: s.cameraIntents.map((item) =>
+          item.id === intent.id && targetEntity
+            ? {
+                ...result.intent,
+                target: {
+                  entityId: targetEntity.id,
+                  anchor: targetEntity.anchors[result.intent.target.anchor]
+                    ? result.intent.target.anchor
+                    : defaultAnchor(targetEntity),
+                },
+              }
+            : item,
+        ),
+        selectedId: first?.id ?? s.selectedId,
+        promptLog: result.logs,
+        llmError: undefined,
+      });
+      get().resolve();
+    } catch (error) {
+      set({ llmError: error instanceof Error ? error.message : String(error) });
+    }
   },
   togglePreview: (open) =>
     set((s) => ({ previewOpen: open === undefined ? !s.previewOpen : open })),

@@ -80,54 +80,65 @@ function rawPosition(
 }
 
 export function solveCamera(scene: SceneGraph, intent: CameraIntent): SolveResult {
-  const targetEntity = findEntity(scene, intent.target.entityId);
+  const targetEntity = findEntity(scene, intent.target.entityId) ?? scene.entities[0];
   if (!targetEntity) {
-    throw new Error(`Unknown target entity: ${intent.target.entityId}`);
+    throw new Error("场景为空，无法求解摄像机");
   }
+  const resolved = {
+    ...intent,
+    target: {
+      entityId: targetEntity.id,
+      anchor: targetEntity.anchors[intent.target.anchor]
+        ? intent.target.anchor
+        : targetEntity.semanticType === "person"
+          ? "chest"
+          : "center",
+    },
+  };
 
-  const duration = Math.min(Math.max(intent.duration || 5, 0.5), 60);
+  const duration = Math.min(Math.max(resolved.duration || 5, 0.5), 60);
   const count = sampleCount(duration);
-  const t0 = targetEvaluated(scene, intent, 0);
+  const t0 = targetEvaluated(scene, resolved, 0);
   const radius = Math.max(
     MIN_ORBIT_RADIUS,
     solveCameraDistance({
       target: t0,
-      focalLength: intent.lens.focalLength,
-      framing: intent.framing.type,
-      sensorHeight: intent.lens.sensorHeight,
+      focalLength: resolved.lens.focalLength,
+      framing: resolved.framing.type,
+      sensorHeight: resolved.lens.sensorHeight,
     }),
   );
 
-  const start = rawPosition(scene, intent, 0, 0, radius, null);
+  const start = rawPosition(scene, resolved, 0, 0, radius, null);
   const raw: CameraSample[] = [];
 
   for (let i = 0; i < count; i++) {
     const progress = i / (count - 1);
     const time = progress * duration;
-    const look = targetWorld(scene, intent, time);
-    const position = rawPosition(scene, intent, time, progress, radius, start);
+    const look = targetWorld(scene, resolved, time);
+    const position = rawPosition(scene, resolved, time, progress, radius, start);
     raw.push({
       time,
       position,
       quaternion: solveLookAt(position, look),
-      focalLength: intent.lens.focalLength,
+      focalLength: resolved.lens.focalLength,
       collision: false,
       visible: true,
     });
   }
 
-  const smoothed = smoothSamples(raw, intent.smoothness ?? 0.35);
+  const smoothed = smoothSamples(raw, resolved.smoothness ?? 0.35);
   const warnings: ConstraintWarning[] = [];
-  const ignore = new Set([intent.target.entityId]);
-  if (intent.height?.type === "anchor") ignore.add(intent.height.entityId);
+  const ignore = new Set([resolved.target.entityId]);
+  if (resolved.height?.type === "anchor") ignore.add(resolved.height.entityId);
 
   const checkEvery = Math.max(1, Math.floor(smoothed.length / 90));
   const samples = smoothed.map((sample, index) => {
     if (index % checkEvery !== 0 && index !== smoothed.length - 1) return sample;
     const entities = evaluateScene(scene, sample.time);
     const collision = checkCameraCollision(sample.position, entities, ignore);
-    const look = targetWorld(scene, intent, sample.time);
-    const vis = checkVisibility(sample.position, look, entities, intent.target.entityId);
+    const look = targetWorld(scene, resolved, sample.time);
+    const vis = checkVisibility(sample.position, look, entities, resolved.target.entityId);
     if (collision.hit) {
       warnings.push({
         time: sample.time,

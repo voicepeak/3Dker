@@ -51,7 +51,7 @@ export function CameraIntentPanel() {
         <div className="field">
           <label>目标</label>
           <select
-            value={intent.target.entityId}
+            value={entities.some((entity) => entity.id === intent.target.entityId) ? intent.target.entityId : ""}
             onChange={(e) => {
               const entityId = e.target.value;
               const entity = entities.find((item) => item.id === entityId);
@@ -59,6 +59,11 @@ export function CameraIntentPanel() {
               updateIntent({ target: { entityId, anchor } });
             }}
           >
+            {!entities.some((entity) => entity.id === intent.target.entityId) && (
+              <option value="" disabled>
+                选择目标
+              </option>
+            )}
             {entities.map((entity) => (
               <option key={entity.id} value={entity.id}>
                 {entity.name}
@@ -69,7 +74,7 @@ export function CameraIntentPanel() {
         <div className="field">
           <label>锚点</label>
           <select
-            value={intent.target.anchor}
+            value={target?.anchors[intent.target.anchor] ? intent.target.anchor : Object.keys(target?.anchors ?? { center: 0 })[0]}
             onChange={(e) => updateIntent({ target: { ...intent.target, anchor: e.target.value } })}
           >
             {Object.keys(target?.anchors ?? { chest: 0 }).map((name) => (
