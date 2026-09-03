@@ -54,6 +54,8 @@ export function CameraPreview() {
 
     let raf = 0;
     const loop = () => {
+      raf = requestAnimationFrame(loop);
+      try {
       const state = useProjectStore.getState();
       const time = peekPlaybackTime();
       const rev = state.scene.entities.map((e) => `${e.id}:${e.semanticType}:${e.bounds.size.join(",")}`).join("|");
@@ -89,7 +91,9 @@ export function CameraPreview() {
         camera.updateProjectionMatrix();
       }
       renderer.render(scene, camera);
-      raf = requestAnimationFrame(loop);
+      } catch {
+        /* keep the preview loop alive */
+      }
     };
     raf = requestAnimationFrame(loop);
 

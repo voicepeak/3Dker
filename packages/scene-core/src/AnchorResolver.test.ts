@@ -21,6 +21,13 @@ describe("AnchorResolver", () => {
     expect(top[0]).toBeCloseTo(3);
   });
 
+  it("falls back when the requested anchor is missing", () => {
+    const vase = createEntity("vase", { position: [2, 0, 0] });
+    const pos = resolveAnchor({ entities: [vase] }, vase.id, "chest");
+    expect(pos[0]).toBeCloseTo(2);
+    expect(pos[1]).toBeCloseTo(0.2, 1);
+  });
+
   it("follows person motion path", () => {
     const person = createEntity("person", { position: [0, 0, 0] });
     person.motionPath = {

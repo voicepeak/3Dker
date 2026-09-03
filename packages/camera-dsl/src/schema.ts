@@ -103,7 +103,7 @@ export const cameraIntentSchema = z.object({
       screenY: z.number().default(0.5),
     })
     .optional(),
-  duration: z.number().positive().default(5),
+  duration: z.number().min(0.5).max(60).default(5),
   smoothness: z.number().min(0).max(1).default(0.35),
 });
 

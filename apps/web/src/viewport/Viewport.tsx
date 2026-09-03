@@ -272,48 +272,54 @@ export function Viewport() {
 
     let raf = 0;
     const loop = () => {
-      const state = useProjectStore.getState();
-      const time = peekPlaybackTime();
-      syncEntities();
-      syncAnchors();
-      syncPath();
-      const selected = meshes.get(state.selectedId ?? "");
-      if (state.playback.playing) {
-        if (transform.object) transform.detach();
-      } else if (selected && transform.object !== selected && !transform.dragging) {
-        transform.attach(selected);
-      } else if (!selected) {
-        transform.detach();
-      }
+      raf = requestAnimationFrame(loop);
+      try {
+        const state = useProjectStore.getState();
+        const time = peekPlaybackTime();
+        syncEntities();
+        syncAnchors();
+        syncPath();
+        const selected = meshes.get(state.selectedId ?? "");
+        if (state.playback.playing) {
+          if (transform.object) transform.detach();
+        } else if (selected && transform.object !== selected && !transform.dragging) {
+          transform.attach(selected);
+        } else if (!selected) {
+          transform.detach();
+        }
 
-      if (state.solve) {
-        const sample = sampleAt(state.solve, time);
-        filmCamera.position.set(...sample.position);
-        filmCamera.quaternion.set(...sample.quaternion);
-        filmCamera.fov = THREE.MathUtils.radToDeg(verticalFovRad(sample.focalLength));
-        filmCamera.updateProjectionMatrix();
-        helper.update();
-        const intent = state.cameraIntents[0];
-        const target = state.scene.entities.find((e) => e.id === intent.target.entityId);
-        if (target) {
-          const look = evaluateEntity(target, time).anchorsWorld[intent.target.anchor];
-          if (look) {
-            lookLine.geometry.setFromPoints([
-              new THREE.Vector3(...sample.position),
-              new THREE.Vector3(...look),
-            ]);
+        if (state.solve) {
+          const sample = sampleAt(state.solve, time);
+          filmCamera.position.set(...sample.position);
+          filmCamera.quaternion.set(...sample.quaternion);
+          filmCamera.fov = THREE.MathUtils.radToDeg(verticalFovRad(sample.focalLength));
+          filmCamera.updateProjectionMatrix();
+          helper.update();
+          const intent = state.cameraIntents.find((i) => i.id === state.activeIntentId) ?? state.cameraIntents[0];
+          const target = state.scene.entities.find((e) => e.id === intent?.target.entityId);
+          if (target && intent) {
+            const look =
+              evaluateEntity(target, time).anchorsWorld[intent.target.anchor] ??
+              evaluateEntity(target, time).anchorsWorld.center;
+            if (look) {
+              lookLine.geometry.setFromPoints([
+                new THREE.Vector3(...sample.position),
+                new THREE.Vector3(...look),
+              ]);
+            }
+          }
+          for (const entity of evaluateScene(state.scene, time)) {
+            const mesh = meshes.get(entity.entity.id);
+            if (!mesh) continue;
+            mesh.position.set(entity.position[0], 0, entity.position[2]);
+            mesh.rotation.y = entity.yaw;
           }
         }
-        for (const entity of evaluateScene(state.scene, time)) {
-          const mesh = meshes.get(entity.entity.id);
-          if (!mesh) continue;
-          mesh.position.set(entity.position[0], 0, entity.position[2]);
-          mesh.rotation.y = entity.yaw;
-        }
+        orbit.update();
+        renderer.render(scene, camera);
+      } catch {
+        /* keep the director viewport alive */
       }
-      orbit.update();
-      renderer.render(scene, camera);
-      raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
 

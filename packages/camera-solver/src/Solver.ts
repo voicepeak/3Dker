@@ -15,8 +15,11 @@ import { truckPosition } from "./motion/TruckSolver";
 import { smoothSamples } from "./smooth/PathSmoother";
 import type { CameraSample, ConstraintWarning, SolveResult } from "./types";
 
+const MAX_SAMPLES = 181;
+
 function sampleCount(duration: number): number {
-  return Math.max(2, Math.round(duration * SAMPLE_FPS) + 1);
+  const dur = Math.min(Math.max(duration, 0.5), 60);
+  return Math.min(MAX_SAMPLES, Math.max(2, Math.round(dur * SAMPLE_FPS) + 1));
 }
 
 function startAzimuth(intent: CameraIntent, yaw: number): number {
@@ -82,7 +85,7 @@ export function solveCamera(scene: SceneGraph, intent: CameraIntent): SolveResul
     throw new Error(`Unknown target entity: ${intent.target.entityId}`);
   }
 
-  const duration = intent.duration;
+  const duration = Math.min(Math.max(intent.duration || 5, 0.5), 60);
   const count = sampleCount(duration);
   const t0 = targetEvaluated(scene, intent, 0);
   const radius = Math.max(
@@ -118,7 +121,9 @@ export function solveCamera(scene: SceneGraph, intent: CameraIntent): SolveResul
   const ignore = new Set([intent.target.entityId]);
   if (intent.height?.type === "anchor") ignore.add(intent.height.entityId);
 
-  const samples = smoothed.map((sample) => {
+  const checkEvery = Math.max(1, Math.floor(smoothed.length / 90));
+  const samples = smoothed.map((sample, index) => {
+    if (index % checkEvery !== 0 && index !== smoothed.length - 1) return sample;
     const entities = evaluateScene(scene, sample.time);
     const collision = checkCameraCollision(sample.position, entities, ignore);
     const look = targetWorld(scene, intent, sample.time);

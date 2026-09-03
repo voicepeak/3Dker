@@ -15,6 +15,7 @@ import {
 } from "@semantic-director/project-core";
 import {
   createEntity,
+  defaultAnchor,
   duplicateEntity,
   type SceneEntity,
 } from "@semantic-director/scene-core";
@@ -99,6 +100,7 @@ function fromProject(project: ProjectState) {
 
 let lastPlaybackUi = 0;
 let playbackClockTime = 0;
+let resolveTimer: number | undefined;
 
 export function peekPlaybackTime(): number {
   const playback = useProjectStore.getState().playback;
@@ -164,12 +166,30 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     });
   },
   updateIntent: (patch) => {
-    set((s) => ({
-      cameraIntents: s.cameraIntents.map((intent) =>
-        intent.id === s.activeIntentId ? cameraIntentSchema.parse({ ...intent, ...patch }) : intent,
-      ),
-    }));
-    get().resolve();
+    const current = get().cameraIntents.find((i) => i.id === get().activeIntentId) ?? get().cameraIntents[0];
+    if (patch.duration !== undefined && (!Number.isFinite(patch.duration) || patch.duration < 0.5)) return;
+    const targetPatch = patch.target ?? current.target;
+    const targetEntity = get().scene.entities.find((entity) => entity.id === targetPatch.entityId);
+    const safeTarget = targetEntity
+      ? {
+          entityId: targetEntity.id,
+          anchor: targetEntity.anchors[targetPatch.anchor] ? targetPatch.anchor : defaultAnchor(targetEntity),
+        }
+      : targetPatch;
+    try {
+      const next = cameraIntentSchema.parse({
+        ...current,
+        ...patch,
+        target: safeTarget,
+        duration: Math.min(Math.max(patch.duration ?? current.duration, 0.5), 60),
+      });
+      set((s) => ({
+        cameraIntents: s.cameraIntents.map((intent) => (intent.id === s.activeIntentId ? next : intent)),
+      }));
+      get().resolve();
+    } catch (error) {
+      set({ solveError: error instanceof Error ? error.message : "摄像机参数无效" });
+    }
   },
   setMotion: (motion) => get().updateIntent({ motion }),
   setFraming: (type) => get().updateIntent({ framing: { type } }),
@@ -179,18 +199,21 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     set((s) => ({ playback: { ...s.playback, duration } }));
   },
   resolve: () => {
-    const s = get();
-    const intent = s.cameraIntents.find((i) => i.id === s.activeIntentId) ?? s.cameraIntents[0];
-    try {
-      const solve = solveCamera(s.scene, intent);
-      set({
-        solve,
-        solveError: undefined,
-        playback: { ...s.playback, duration: intent.duration },
-      });
-    } catch (error) {
-      set({ solve: undefined, solveError: error instanceof Error ? error.message : String(error) });
-    }
+    if (resolveTimer !== undefined) window.clearTimeout(resolveTimer);
+    resolveTimer = window.setTimeout(() => {
+      const s = get();
+      const intent = s.cameraIntents.find((i) => i.id === s.activeIntentId) ?? s.cameraIntents[0];
+      try {
+        const solve = solveCamera(s.scene, intent);
+        set({
+          solve,
+          solveError: undefined,
+          playback: { ...s.playback, duration: intent.duration },
+        });
+      } catch (error) {
+        set({ solve: undefined, solveError: error instanceof Error ? error.message : String(error) });
+      }
+    }, 60);
   },
   play: () => {
     lastPlaybackUi = 0;

@@ -1,4 +1,5 @@
 import type { FramingType, MotionIntent } from "@semantic-director/camera-dsl";
+import { defaultAnchor } from "@semantic-director/scene-core";
 import { ANCHOR_LABEL, FRAMING_LABEL, MOTION_LABEL, SIDE_LABEL } from "../i18n";
 import { useProjectStore } from "../store/projectStore";
 
@@ -51,7 +52,12 @@ export function CameraIntentPanel() {
           <label>目标</label>
           <select
             value={intent.target.entityId}
-            onChange={(e) => updateIntent({ target: { ...intent.target, entityId: e.target.value } })}
+            onChange={(e) => {
+              const entityId = e.target.value;
+              const entity = entities.find((item) => item.id === entityId);
+              const anchor = entity ? defaultAnchor(entity) : "center";
+              updateIntent({ target: { entityId, anchor } });
+            }}
           >
             {entities.map((entity) => (
               <option key={entity.id} value={entity.id}>
@@ -124,7 +130,11 @@ export function CameraIntentPanel() {
             min={1}
             step={0.5}
             value={intent.duration}
-            onChange={(e) => updateIntent({ duration: Number(e.target.value) })}
+            onChange={(e) => {
+              const value = Number(e.target.value);
+              if (!Number.isFinite(value) || value < 0.5) return;
+              updateIntent({ duration: Math.min(value, 60) });
+            }}
           />
         </div>
         {motion.type === "orbit" && (
@@ -134,16 +144,18 @@ export function CameraIntentPanel() {
               <input
                 type="number"
                 value={motion.angle}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const value = Number(e.target.value);
+                  if (!Number.isFinite(value)) return;
                   setMotion({
                     type: "orbit",
-                    angle: Number(e.target.value),
+                    angle: value,
                     direction: motion.direction,
                     startAzimuth: motion.startAzimuth,
                     startSide: motion.startSide,
                     targetEntityId: motion.targetEntityId,
-                  })
-                }
+                  });
+                }}
               />
             </div>
             <div className="field">
@@ -170,16 +182,18 @@ export function CameraIntentPanel() {
               <input
                 type="number"
                 value={motion.startAzimuth}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const value = Number(e.target.value);
+                  if (!Number.isFinite(value)) return;
                   setMotion({
                     type: "orbit",
                     angle: motion.angle,
                     direction: motion.direction,
-                    startAzimuth: Number(e.target.value),
+                    startAzimuth: value,
                     startSide: motion.startSide,
                     targetEntityId: motion.targetEntityId,
-                  })
-                }
+                  });
+                }}
               />
             </div>
           </>
@@ -249,14 +263,16 @@ export function CameraIntentPanel() {
               <input
                 type="number"
                 value={motion.distance}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const value = Number(e.target.value);
+                  if (!Number.isFinite(value)) return;
                   setMotion({
                     type: "truck",
                     direction: motion.direction,
-                    distance: Number(e.target.value),
+                    distance: value,
                     startSide: motion.startSide,
-                  })
-                }
+                  });
+                }}
               />
             </div>
           </>
@@ -285,14 +301,16 @@ export function CameraIntentPanel() {
               <input
                 type="number"
                 value={motion.distance}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const value = Number(e.target.value);
+                  if (!Number.isFinite(value)) return;
                   setMotion({
                     type: "crane",
                     direction: motion.direction,
-                    distance: Number(e.target.value),
+                    distance: value,
                     startSide: motion.startSide,
-                  })
-                }
+                  });
+                }}
               />
             </div>
           </>
