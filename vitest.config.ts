@@ -16,6 +16,8 @@ export default defineConfig({
         "packages/camera-solver/src/index.ts",
       ),
       "@semantic-director/project-core": path.resolve(__dirname, "packages/project-core/src/index.ts"),
+      "@semantic-director/dsl-core": path.resolve(__dirname, "packages/dsl-core/src/index.ts"),
+      "@semantic-director/dsl-runtime": path.resolve(__dirname, "packages/dsl-runtime/src/index.ts"),
     },
   },
 });

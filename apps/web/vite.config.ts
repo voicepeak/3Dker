@@ -9,6 +9,7 @@ export default defineConfig({
       input: {
         main: path.resolve(__dirname, "index.html"),
         preview: path.resolve(__dirname, "preview.html"),
+        bench: path.resolve(__dirname, "bench.html"),
       },
     },
   },
@@ -26,6 +27,8 @@ export default defineConfig({
         __dirname,
         "../../packages/renderer-three/src/index.ts",
       ),
+      "@semantic-director/dsl-core": path.resolve(__dirname, "../../packages/dsl-core/src/index.ts"),
+      "@semantic-director/dsl-runtime": path.resolve(__dirname, "../../packages/dsl-runtime/src/index.ts"),
     },
   },
   server: {

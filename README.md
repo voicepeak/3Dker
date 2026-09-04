@@ -17,7 +17,16 @@ npm test
 npm run dev
 ```
 
-打开 `http://localhost:5173`。
+打开 `http://127.0.0.1:5174`。
+
+Issue #2 的算子检验台在新分支 `feat/dsl-operator-bench`：
+
+```bash
+git checkout feat/dsl-operator-bench
+npm run dev
+```
+
+打开 `http://127.0.0.1:5175/bench.html`。左侧点每一个摄像机 / 实体原语即可播放。希区柯克在「配方」里，展开为 `translate + zoom + framing lock`，不是基础算子。
 
 ## 三个 Demo
 
