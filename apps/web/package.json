@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@semantic-director/camera-dsl": "*",
+    "@semantic-director/dsl-core": "*",
+    "@semantic-director/dsl-runtime": "*",
     "@semantic-director/camera-solver": "*",
     "@semantic-director/project-core": "*",
     "@semantic-director/renderer-three": "*",

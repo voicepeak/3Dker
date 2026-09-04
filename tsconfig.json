@@ -2,6 +2,8 @@
   "files": [],
   "references": [
     { "path": "packages/shared" },
+    { "path": "packages/dsl-core" },
+    { "path": "packages/dsl-runtime" },
     { "path": "packages/scene-core" },
     { "path": "packages/camera-dsl" },
     { "path": "packages/camera-solver" },

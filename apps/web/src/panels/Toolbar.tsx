@@ -27,6 +27,9 @@ export function Toolbar() {
       <button className={previewOpen ? "active" : ""} onClick={() => togglePreview()}>
         {previewOpen ? "关闭预览" : "摄像机预览"}
       </button>
+      <a className="toolbar-link" href="/bench.html">
+        算子检验台
+      </a>
       <span className="spacer" />
       <button onClick={() => loadDemo("A")}>示例 A 环绕</button>
       <button onClick={() => loadDemo("B")}>示例 B 碰撞</button>
